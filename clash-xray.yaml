@@ -1,0 +1,81 @@
+port: 7890
+socks-port: 7891
+allow-lan: false
+mode: rule
+log-level: info
+external-controller: 0.0.0.0:9090
+secret: ""
+
+dns:
+  enable: true
+  ipv6: false
+  enhanced-mode: redir-host
+  nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  fallback:
+    - tls://1.1.1.1:853
+    - tls://8.8.8.8:853
+
+proxies:
+  # VLESS+Reality配置
+  - name: "🇺🇸 美国阿里云-Xray"
+    type: vless
+    server: 47.251.251.134
+    port: 8443
+    uuid: a79e4ad6-ce8c-4de4-aa58-fd484f3bd84d
+    network: tcp
+    tls: true
+    udp: true
+    # Reality特有配置
+    reality-opts:
+      public-key: SQHeBEgdm6Awuem6I9slnIJl-e6nLHUEeBlgmxpTCCc
+      short-id: dd67c5fdaa3c0dd6
+    client-fingerprint: chrome
+    servername: www.amazon.com
+    flow: xtls-rprx-vision
+    # 可选参数
+    skip-cert-verify: false
+    alpn: 
+      - h2
+      - http/1.1
+
+proxy-groups:
+  - name: 🚀 代理选择
+    type: select
+    proxies:
+      - 🇺🇸 美国阿里云-Xray
+      - DIRECT
+  
+  - name: 🌍 国外网站
+    type: select
+    proxies:
+      - 🚀 代理选择
+      - 🇺🇸 美国阿里云-Xray
+  
+  - name: 📹 流媒体
+    type: select
+    proxies:
+      - 🚀 代理选择
+      - 🇺🇸 美国阿里云-Xray
+
+rules:
+  # 广告拦截
+  - DOMAIN-SUFFIX,ads.com,REJECT
+  
+  # 国内直连
+  - DOMAIN-SUFFIX,cn,DIRECT
+  - DOMAIN-SUFFIX,baidu.com,DIRECT
+  - DOMAIN-SUFFIX,taobao.com,DIRECT
+  - DOMAIN-SUFFIX,qq.com,DIRECT
+  - GEOIP,CN,DIRECT
+  
+  # 国外代理
+  - DOMAIN-SUFFIX,google.com,🌍 国外网站
+  - DOMAIN-SUFFIX,youtube.com,📹 流媒体
+  - DOMAIN-SUFFIX,netflix.com,📹 流媒体
+  - DOMAIN-SUFFIX,twitter.com,🌍 国外网站
+  - DOMAIN-SUFFIX,facebook.com,🌍 国外网站
+  
+  # 最终规则
+  - MATCH,🚀 代理选择
